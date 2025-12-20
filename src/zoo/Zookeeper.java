@@ -22,10 +22,9 @@ public class Zookeeper {
     }
 
     public void setExperienceYears(int experienceYears) {
-        this.experienceYears = experienceYears;
-    }
+        this.experienceYears = experienceYears;}
 
-    public void displayInfo() {
-        System.out.println("Zookeeper: " + name + ", Experience: " + experienceYears + " years");
+        public void displayInfo() {
+            System.out.println("Zookeeper: " + name + ", Experience: " + experienceYears + " years");
+        }
     }
-}
