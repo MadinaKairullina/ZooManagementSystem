@@ -1,20 +1,27 @@
 package zoo;
 
+import java.util.ArrayList;
+import java.util.List;
 public class Main {
     public static void main(String[] args) {
-
-        Animals animal1 = new Animals("Leo", "Lion", 5);
-        Animals animal2 = new Animals("Elly", "Elephant", 10);
-        Zookeeper keeper = new Zookeeper("Tom", 7);
-        Zoo zoo = new Zoo("Astana Zoo", "Kazakhstan");
-        animal1.displayInfo();
-        animal2.displayInfo();
-        keeper.displayInfo();
-        zoo.displayInfo();
-        if (animal1.getAge() > animal2.getAge()) {
-            System.out.println(animal1.getName() + " is older than " + animal2.getName());
-        } else {
-            System.out.println(animal2.getName() + " is older than " + animal1.getName());
+        List<Zookeeper> workers = new ArrayList<>();
+        workers.add(new Zookeeper("Alex", 7));
+        workers.add(new Zookeeper("Maria", 12));
+        workers.add(new Zookeeper("Ivan", 5));
+        System.out.println("All workers:");
+        for (Zookeeper z : workers) {
+            System.out.println(z);
+        }
+        System.out.println("\nWorkers with more than 6 years of experience:");
+        for (Zookeeper z : workers) {
+            if (z.getExperienceYears() > 6) {
+                System.out.println(z);
+            }
+        }
+        workers.sort((a, b) -> b.getExperienceYears() - a.getExperienceYears());
+        System.out.println("\nSorted by experience:");
+        for (Zookeeper z : workers) {
+            System.out.println(z);
         }
     }
 }
