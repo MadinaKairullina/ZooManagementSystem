@@ -1,4 +1,4 @@
-package zoo;
+package zoo.domain;
 
 public abstract class Person {
     protected String name;
