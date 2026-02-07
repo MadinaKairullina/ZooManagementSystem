@@ -4,15 +4,19 @@ import zoo.domain.Animal;
 import zoo.exception.NotFoundException;
 import zoo.exception.ValidationException;
 import zoo.repository.AnimalRepository;
+import zoo.repository.CrudRepository;
+import zoo.repository.ZooRepository;
 
 import java.util.List;
 
 public class AnimalService {
 
     private final AnimalRepository repo;
+    private final ZooRepository zooRepo;
 
-    public AnimalService(AnimalRepository repo) {
+    public AnimalService(AnimalRepository repo, ZooRepository zooRepo) {
         this.repo = repo;
+        this.zooRepo = zooRepo;
     }
 
     public List<Animal> getAll() {
@@ -20,46 +24,76 @@ public class AnimalService {
     }
 
     public List<Animal> getByZooId(int zooId) {
-        if (zooId <= 0) throw new ValidationException("zooId must be > 0");
+        requirePositive(zooId, "zooId");
+        ensureZooExists(zooId);
         return repo.findByZooId(zooId);
     }
 
     public Animal getById(int id) {
-        if (id <= 0) throw new ValidationException("Animal id must be > 0");
-        return repo.findById(id)
-                .orElseThrow(() -> new NotFoundException("Animal id=" + id + " not found"));
+        requirePositive(id, "Animal id");
+        return repo.getRequired(id, () -> new NotFoundException("Animal id=" + id + " not found"));
     }
 
     public Animal add(String name, String species, int age, int zooId) {
         validateAnimalFields(name, species, age, zooId);
-        // id=0 (или любой) — БД присвоит id сама (SERIAL/IDENTITY)
-        Animal created = repo.create(new Animal(0, name, species, age, zooId));
-        return created;
+        ensureZooExists(zooId);
+
+        return repo.create(
+                Animal.builder()
+                        .name(name)
+                        .species(species)
+                        .age(age)
+                        .zooId(zooId)
+                        .build()
+        );
     }
 
     public void update(int id, String name, String species, int age, int zooId) {
-        if (id <= 0) throw new ValidationException("Animal id must be > 0");
+        requirePositive(id, "Animal id");
         validateAnimalFields(name, species, age, zooId);
+        ensureZooExists(zooId);
 
-        boolean ok = repo.update(new Animal(id, name, species, age, zooId));
+        boolean ok = repo.update(
+                Animal.builder()
+                        .id(id)
+                        .name(name)
+                        .species(species)
+                        .age(age)
+                        .zooId(zooId)
+                        .build()
+        );
+
         if (!ok) throw new NotFoundException("Animal id=" + id + " not found");
     }
 
     public void updateAge(int id, int newAge) {
-        if (id <= 0) throw new ValidationException("Animal id must be > 0");
+        requirePositive(id, "Animal id");
         if (newAge < 0) throw new ValidationException("Age cannot be negative");
 
-        Animal current = getById(id); // тут NotFoundException, если нет
-        Animal updated = new Animal(current.getId(), current.getName(), current.getSpecies(), newAge, current.getZooId());
+        Animal current = getById(id);
 
-        boolean ok = repo.update(updated);
+        boolean ok = repo.update(
+                Animal.builder()
+                        .id(current.getId())
+                        .name(current.getName())
+                        .species(current.getSpecies())
+                        .age(newAge)
+                        .zooId(current.getZooId())
+                        .build()
+        );
+
         if (!ok) throw new NotFoundException("Animal id=" + id + " not found");
     }
 
     public void delete(int id) {
-        if (id <= 0) throw new ValidationException("Animal id must be > 0");
+        requirePositive(id, "Animal id");
         boolean ok = repo.delete(id);
         if (!ok) throw new NotFoundException("Animal id=" + id + " not found");
+    }
+
+    private void ensureZooExists(int zooId) {
+        // default method из CrudRepository
+        zooRepo.getRequired(zooId, () -> new NotFoundException("Zoo id=" + zooId + " not found"));
     }
 
     private void validateAnimalFields(String name, String species, int age, int zooId) {
@@ -69,7 +103,15 @@ public class AnimalService {
             throw new ValidationException("Species cannot be empty");
         if (age < 0)
             throw new ValidationException("Age cannot be negative");
-        if (zooId <= 0)
-            throw new ValidationException("zooId must be > 0");
+        requirePositive(zooId, "zooId");
+    }
+
+    private void requirePositive(int value, String fieldName) {
+        try {
+            // static method из CrudRepository
+            CrudRepository.requirePositiveInt(value, fieldName);
+        } catch (IllegalArgumentException e) {
+            throw new ValidationException(e.getMessage());
+        }
     }
 }

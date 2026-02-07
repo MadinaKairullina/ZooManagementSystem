@@ -1,4 +1,4 @@
-package zoo.service;
+package zoo.util;
 
 import java.util.*;
 import java.util.function.Predicate;

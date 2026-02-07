@@ -48,4 +48,25 @@ public class Zoo {
     public int hashCode() {
         return Objects.hash(id);
     }
+
+    // ===== BUILDER PATTERN =====
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private int id = 0;
+        private String name;
+        private String city;
+
+        private Builder() {}
+
+        public Builder id(int id) { this.id = id; return this; }
+        public Builder name(String name) { this.name = name; return this; }
+        public Builder city(String city) { this.city = city; return this; }
+
+        public Zoo build() {
+            return new Zoo(id, name, city);
+        }
+    }
 }

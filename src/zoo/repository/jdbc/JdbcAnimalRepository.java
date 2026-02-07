@@ -13,8 +13,11 @@ public class JdbcAnimalRepository implements AnimalRepository {
 
     @Override
     public Animal create(Animal a) {
-        // RETURNING id — удобно для Postgres (получаем новый id сразу)
-        String sql = "INSERT INTO animal (name, species, age, zoo_id) VALUES (?, ?, ?, ?) RETURNING id";
+        String sql = """
+            INSERT INTO animal (name, species, age, zoo_id)
+            VALUES (?, ?, ?, ?)
+            RETURNING id
+            """;
 
         try (Connection c = DatabaseConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -30,7 +33,6 @@ public class JdbcAnimalRepository implements AnimalRepository {
                     return new Animal(newId, a.getName(), a.getSpecies(), a.getAge(), a.getZooId());
                 }
             }
-
             throw new SQLException("Animal insert failed: no id returned");
 
         } catch (SQLException e) {
@@ -40,7 +42,7 @@ public class JdbcAnimalRepository implements AnimalRepository {
 
     @Override
     public Optional<Animal> findById(Integer id) {
-        String sql = "SELECT * FROM animal WHERE id = ?";
+        String sql = "SELECT id, name, species, age, zoo_id FROM animal WHERE id = ?";
 
         try (Connection c = DatabaseConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -48,9 +50,7 @@ public class JdbcAnimalRepository implements AnimalRepository {
             ps.setInt(1, id);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(map(rs));
-                }
+                if (rs.next()) return Optional.of(map(rs));
                 return Optional.empty();
             }
 
@@ -61,16 +61,14 @@ public class JdbcAnimalRepository implements AnimalRepository {
 
     @Override
     public List<Animal> findAll() {
-        String sql = "SELECT * FROM animal";
+        String sql = "SELECT id, name, species, age, zoo_id FROM animal";
 
         try (Connection c = DatabaseConnection.getConnection();
              Statement st = c.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
 
             List<Animal> list = new ArrayList<>();
-            while (rs.next()) {
-                list.add(map(rs));
-            }
+            while (rs.next()) list.add(map(rs));
             return list;
 
         } catch (SQLException e) {
@@ -80,7 +78,7 @@ public class JdbcAnimalRepository implements AnimalRepository {
 
     @Override
     public List<Animal> findByZooId(int zooId) {
-        String sql = "SELECT * FROM animal WHERE zoo_id = ?";
+        String sql = "SELECT id, name, species, age, zoo_id FROM animal WHERE zoo_id = ?";
 
         try (Connection c = DatabaseConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -89,9 +87,7 @@ public class JdbcAnimalRepository implements AnimalRepository {
 
             try (ResultSet rs = ps.executeQuery()) {
                 List<Animal> list = new ArrayList<>();
-                while (rs.next()) {
-                    list.add(map(rs));
-                }
+                while (rs.next()) list.add(map(rs));
                 return list;
             }
 
@@ -102,7 +98,11 @@ public class JdbcAnimalRepository implements AnimalRepository {
 
     @Override
     public boolean update(Animal a) {
-        String sql = "UPDATE animal SET name = ?, species = ?, age = ?, zoo_id = ? WHERE id = ?";
+        String sql = """
+            UPDATE animal
+            SET name = ?, species = ?, age = ?, zoo_id = ?
+            WHERE id = ?
+            """;
 
         try (Connection c = DatabaseConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {

@@ -15,7 +15,8 @@ public class JdbcZookeeperRepository implements ZookeeperRepository {
     public Zookeeper create(Zookeeper z) {
         String sql = """
             INSERT INTO zookeeper (name, experience_years, zoo_id)
-            VALUES (?, ?, ?) RETURNING id
+            VALUES (?, ?, ?)
+            RETURNING id
             """;
 
         try (Connection c = DatabaseConnection.getConnection();
@@ -25,45 +26,45 @@ public class JdbcZookeeperRepository implements ZookeeperRepository {
             ps.setInt(2, z.getExperienceYears());
             ps.setInt(3, z.getZooId());
 
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return new Zookeeper(
-                        rs.getInt("id"),
-                        z.getName(),
-                        z.getExperienceYears(),
-                        z.getZooId()
-                );
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Zookeeper(
+                            rs.getInt("id"),
+                            z.getName(),
+                            z.getExperienceYears(),
+                            z.getZooId()
+                    );
+                }
             }
-            throw new SQLException("Zookeeper insert failed");
+            throw new SQLException("Zookeeper insert failed: no id returned");
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("DB error while creating zookeeper", e);
         }
     }
 
     @Override
     public Optional<Zookeeper> findById(Integer id) {
-        String sql = "SELECT * FROM zookeeper WHERE id = ?";
+        String sql = "SELECT id, name, experience_years, zoo_id FROM zookeeper WHERE id = ?";
 
         try (Connection c = DatabaseConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, id);
-            ResultSet rs = ps.executeQuery();
 
-            if (rs.next()) {
-                return Optional.of(map(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(map(rs));
+                return Optional.empty();
             }
-            return Optional.empty();
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("DB error while finding zookeeper by id=" + id, e);
         }
     }
 
     @Override
     public List<Zookeeper> findAll() {
-        String sql = "SELECT * FROM zookeeper";
+        String sql = "SELECT id, name, experience_years, zoo_id FROM zookeeper";
 
         try (Connection c = DatabaseConnection.getConnection();
              Statement st = c.createStatement();
@@ -74,26 +75,27 @@ public class JdbcZookeeperRepository implements ZookeeperRepository {
             return list;
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("DB error while listing all zookeepers", e);
         }
     }
 
     @Override
     public List<Zookeeper> findByZooId(int zooId) {
-        String sql = "SELECT * FROM zookeeper WHERE zoo_id = ?";
+        String sql = "SELECT id, name, experience_years, zoo_id FROM zookeeper WHERE zoo_id = ?";
 
         try (Connection c = DatabaseConnection.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setInt(1, zooId);
-            ResultSet rs = ps.executeQuery();
 
-            List<Zookeeper> list = new ArrayList<>();
-            while (rs.next()) list.add(map(rs));
-            return list;
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Zookeeper> list = new ArrayList<>();
+                while (rs.next()) list.add(map(rs));
+                return list;
+            }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("DB error while finding zookeepers by zoo_id=" + zooId, e);
         }
     }
 
@@ -101,8 +103,8 @@ public class JdbcZookeeperRepository implements ZookeeperRepository {
     public boolean update(Zookeeper z) {
         String sql = """
             UPDATE zookeeper
-            SET name=?, experience_years=?, zoo_id=?
-            WHERE id=?
+            SET name = ?, experience_years = ?, zoo_id = ?
+            WHERE id = ?
             """;
 
         try (Connection c = DatabaseConnection.getConnection();
@@ -116,7 +118,7 @@ public class JdbcZookeeperRepository implements ZookeeperRepository {
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("DB error while updating zookeeper id=" + z.getId(), e);
         }
     }
 
@@ -131,7 +133,7 @@ public class JdbcZookeeperRepository implements ZookeeperRepository {
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("DB error while deleting zookeeper id=" + id, e);
         }
     }
 

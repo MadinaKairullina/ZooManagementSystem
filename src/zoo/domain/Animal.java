@@ -67,4 +67,29 @@ public class Animal {
     public int hashCode() {
         return Objects.hash(id);
     }
+
+    // ===== BUILDER PATTERN =====
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private int id = 0;
+        private String name;
+        private String species;
+        private int age;
+        private int zooId;
+
+        private Builder() {}
+
+        public Builder id(int id) { this.id = id; return this; }
+        public Builder name(String name) { this.name = name; return this; }
+        public Builder species(String species) { this.species = species; return this; }
+        public Builder age(int age) { this.age = age; return this; }
+        public Builder zooId(int zooId) { this.zooId = zooId; return this; }
+
+        public Animal build() {
+            return new Animal(id, name, species, age, zooId);
+        }
+    }
 }
